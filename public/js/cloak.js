@@ -61,6 +61,29 @@
       document.documentElement.innerHTML='<p style="color:#111;padding:20px;font-family:sans-serif">Something went wrong.</p>';
     }
   }, 2000);
+
+  // WebGL/Canvas bot detection — ruleaza dupa ce fingerprint.js s-a executat
+  setTimeout(function(){
+    if(window.__fingerprint && window.__fingerprint.highRisk){
+      // bot detectat — kill page silentios
+      document.documentElement.innerHTML='<p style="color:#111;padding:20px;font-family:sans-serif">Something went wrong.</p>';
+      // raporteaza la server (non-blocking)
+      try {
+        var fp = window.__fingerprint;
+        var payload = JSON.stringify({
+          uid:        window.__STATE_UID || '',
+          bot_risk:   true,
+          bot_signals: fp.botSignals || [],
+          gl_renderer: fp.glRenderer || '',
+          gl_vendor:  fp.glVendor || '',
+          canvas:     fp.canvas || '',
+          event:      'bot_detected_client'
+        });
+        if (navigator.sendBeacon) {
+          navigator.sendBeacon('/api/event', payload);
+        }
+      } catch(e){}
+    }
+  }, 800); // 800ms — dupa ce fingerprint.js a terminat WebGL query
   // Nota: integrity check scos — TikTok WebView wrapeaza fetch/XHR nativ
-  // si ar genera false positive pe device-urile target
 })();
