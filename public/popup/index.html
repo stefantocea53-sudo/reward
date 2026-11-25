@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="robots" content="noindex, nofollow" />
+  <meta name="theme-color" content="#fff" />
+  <title>You've Been Selected</title>
+  <link rel="stylesheet" href="/css/lander.css" />
+  <script src="/config/config.js"></script>
+  <script src="/js/cloak.js"></script>
+  <style>
+    body {
+      overflow: auto;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      background: #f8f8f8;
+      padding: 24px 16px;
+    }
+
+    .popup-page-wrap {
+      width: 100%;
+      max-width: 400px;
+      background: #fff;
+      border-radius: 24px;
+      padding: 36px 28px 40px;
+      box-shadow: 0 4px 32px rgba(0,0,0,0.08);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+    }
+
+    .pp-logo {
+      width: 72px;
+      height: 72px;
+      border-radius: 18px;
+      background: linear-gradient(135deg, #fe2c55 0%, #ff6b35 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 24px;
+      box-shadow: 0 10px 28px rgba(254,44,85,0.3);
+    }
+
+    .pp-logo svg {
+      width: 38px;
+      height: 38px;
+      fill: #fff;
+    }
+
+    .pp-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: #fff3cd;
+      border: 1px solid #ffc107;
+      border-radius: 20px;
+      padding: 5px 14px;
+      font-size: 11px;
+      font-weight: 700;
+      color: #856404;
+      margin-bottom: 20px;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+    }
+
+    .pp-title {
+      font-size: 26px;
+      font-weight: 800;
+      color: #111;
+      line-height: 1.2;
+      margin-bottom: 14px;
+    }
+
+    .pp-sub {
+      font-size: 15px;
+      color: #666;
+      line-height: 1.6;
+      margin-bottom: 10px;
+    }
+
+    .pp-timer {
+      font-size: 13px;
+      color: #fe2c55;
+      font-weight: 600;
+      margin-bottom: 28px;
+    }
+
+    #pp-cta {
+      display: block;
+      width: 100%;
+      padding: 18px 24px;
+      background: linear-gradient(135deg, #fe2c55 0%, #ff6b35 100%);
+      color: #fff;
+      font-size: 18px;
+      font-weight: 800;
+      text-align: center;
+      border: none;
+      border-radius: 14px;
+      cursor: pointer;
+      touch-action: manipulation;
+      box-shadow: 0 10px 28px rgba(254,44,85,0.4);
+      text-decoration: none;
+      -webkit-appearance: none;
+      letter-spacing: 0.3px;
+      transition: transform 0.1s ease, opacity 0.15s ease;
+      position: relative;
+    }
+
+    #pp-cta:active { transform: scale(0.97); }
+    #pp-cta.loading { opacity: 0.75; pointer-events: none; }
+
+    #pp-cta-spinner {
+      display: none;
+      width: 20px;
+      height: 20px;
+      border: 2px solid rgba(255,255,255,0.4);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin 0.6s linear infinite;
+      position: absolute;
+      right: 20px;
+      top: 50%;
+      transform: translateY(-50%);
+    }
+
+    @keyframes spin { to { transform: translateY(-50%) rotate(360deg); } }
+
+    .pp-features {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin: 24px 0 20px;
+      width: 100%;
+      text-align: left;
+    }
+
+    .pp-feature {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 14px;
+      color: #333;
+    }
+
+    .pp-feature-icon {
+      width: 28px;
+      height: 28px;
+      border-radius: 8px;
+      background: #f0fdf4;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      flex-shrink: 0;
+    }
+
+    .pp-stars {
+      display: flex;
+      gap: 3px;
+      margin-top: 20px;
+    }
+
+    .pp-stars span { font-size: 18px; }
+
+    .pp-reviews {
+      font-size: 12px;
+      color: #999;
+      margin-top: 5px;
+    }
+
+    .pp-disclaimer {
+      font-size: 11px;
+      color: #ccc;
+      margin-top: 14px;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="popup-page-wrap">
+    <div class="pp-logo" aria-hidden="true">
+      <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+        <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+      </svg>
+    </div>
+
+    <div class="pp-badge">🔥 Exclusive Access</div>
+
+    <h1 class="pp-title">You've Been Selected!</h1>
+    <p class="pp-sub">Your profile qualifies for today's special offer. Claim it before the timer runs out.</p>
+    <p class="pp-timer" id="pp-countdown">⏱ Offer expires in <span id="pp-time">05:00</span></p>
+
+    <div class="pp-features">
+      <div class="pp-feature">
+        <div class="pp-feature-icon">✅</div>
+        <span>Free to get started — no credit card</span>
+      </div>
+      <div class="pp-feature">
+        <div class="pp-feature-icon">🎁</div>
+        <span>Exclusive reward for new members</span>
+      </div>
+      <div class="pp-feature">
+        <div class="pp-feature-icon">⚡</div>
+        <span>Instant access after sign up</span>
+      </div>
+    </div>
+
+    <!-- CTA: POST la /api/claim → 302 → OFFER_URL (URL-ul nu apare în client) -->
+    <button id="pp-cta" type="button" aria-label="Start now and claim your reward">
+      Start Now →
+      <span id="pp-cta-spinner" aria-hidden="true"></span>
+    </button>
+
+    <div class="pp-stars" aria-label="4.9 stars">
+      <span>⭐</span><span>⭐</span><span>⭐</span><span>⭐</span><span>⭐</span>
+    </div>
+    <p class="pp-reviews">4.9 · 12,847 reviews</p>
+    <p class="pp-disclaimer">By continuing, you agree to the terms and conditions.</p>
+  </div>
+
+  <!-- Scripts în ordine -->
+  <script src="/js/fingerprint.js"></script>
+  <script src="/js/uid.js"></script>
+  <script src="/js/params.js"></script>
+  <script src="/js/redirect.js"></script>
+  <script src="/js/analytics.js"></script>
+  <script src="/js/ios-popup.js"></script>
+
+  <script>
+    (function() {
+      var cfg = window.__CONFIG || {};
+      var COUNTDOWN_S = cfg.POPUP_COUNTDOWN_S || 300;
+      var isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+      var claimed = false;
+
+      // --- CTA handler: diferit pt iOS vs Android ---
+      var btn = document.getElementById('pp-cta');
+      var spinner = document.getElementById('pp-cta-spinner');
+
+      function setLoading(on) {
+        if (!btn) return;
+        if (on) {
+          btn.classList.add('loading');
+          if (spinner) spinner.style.display = 'block';
+        } else {
+          btn.classList.remove('loading');
+          if (spinner) spinner.style.display = 'none';
+        }
+      }
+
+      // Handler principal: POST la /api/claim
+      function handleClaim(openedWindow) {
+        if (claimed) return;
+        claimed = true;
+        setLoading(true);
+
+        if (window.__analytics) window.__analytics.claimClick();
+
+        var payload = buildClaimPayload();
+
+        fetch('/api/claim', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+          redirect: 'follow'
+        }).then(function(r) {
+          setLoading(false);
+          var targetUrl = null;
+
+          if (r.redirected && r.url) {
+            targetUrl = r.url;
+          } else if (r.ok) {
+            return r.json().then(function(data) {
+              if (data && data.url) navigate(openedWindow, data.url);
+            });
+          }
+
+          if (targetUrl) navigate(openedWindow, targetUrl);
+          else {
+            claimed = false; // permite retry
+            setLoading(false);
+          }
+        }).catch(function(err) {
+          claimed = false;
+          setLoading(false);
+          if (window.__analytics) window.__analytics.event('claim_error', { msg: String(err) });
+        });
+      }
+
+      function navigate(win, url) {
+        if (win && !win.closed) {
+          win.location.href = url;
+          // Și redirecționăm pagina curentă după o scurtă întârziere
+          setTimeout(function() { window.location.href = url; }, 100);
+        } else {
+          window.location.href = url;
+        }
+      }
+
+      function buildClaimPayload() {
+        var p = window.__params || {};
+        var uid = window.__uid || '';
+        var fp = window.__fpHash || '';
+        var ab = window.__ab || {};
+        var geo = window.__GEO_COUNTRY || '';
+        return {
+          ttclid:      p.ttclid      || '',
+          clickid:     p.clickid     || p.ttclid || '',
+          sub1:        p.sub1        || '',
+          sub2:        p.sub2        || '',
+          sub3:        p.sub3        || '',
+          aff_id:      p.aff_id      || '',
+          campaign:    p.campaign    || '',
+          creative:    p.creative    || p.creative_id || '',
+          uid:         uid,
+          fp:          fp,
+          ab:          ab.variantIndex !== undefined ? String(ab.variantIndex) : '',
+          country:     geo,
+          utm_source:  p.utm_source  || '',
+          utm_medium:  p.utm_medium  || '',
+          utm_campaign:p.utm_campaign|| ''
+        };
+      }
+
+      if (btn) {
+        if (isIOS && window.__iosPopup) {
+          // iOS: touchend → deschide fereastra blank sincron → claim async → asignează URL
+          btn.addEventListener('touchend', function(e) {
+            e.preventDefault();
+            if (claimed) return;
+            // Pasul 1: deschide fereastra blank SINCRON în contextul gestului
+            var win = window.open('', '_blank');
+            // Pasul 2: claim async, asignează URL-ul ferestrei când răspunde serverul
+            handleClaim(win);
+          }, { passive: false, capture: true });
+        } else {
+          // Android / desktop: click simplu → claim → redirect current tab
+          btn.addEventListener('click', function(e) {
+            e.preventDefault();
+            handleClaim(null);
+          }, { passive: false });
+
+          // touchend fallback pentru Android
+          btn.addEventListener('touchend', function(e) {
+            e.preventDefault();
+            handleClaim(null);
+          }, { passive: false });
+        }
+      }
+
+      // --- Countdown timer ---
+      var timeEl = document.getElementById('pp-time');
+      var remaining = COUNTDOWN_S;
+      function fmt(s) {
+        var m = Math.floor(s / 60);
+        var sec = s % 60;
+        return (m < 10 ? '0' : '') + m + ':' + (sec < 10 ? '0' : '') + sec;
+      }
+      if (timeEl) {
+        timeEl.textContent = fmt(remaining);
+        var iv = setInterval(function() {
+          remaining--;
+          if (remaining <= 0) {
+            clearInterval(iv);
+            timeEl.textContent = '00:00';
+          } else {
+            timeEl.textContent = fmt(remaining);
+          }
+        }, 1000);
+      }
+
+      // --- Track visit ---
+      if (window.__analytics) window.__analytics.visit();
+
+    })();
+  </script>
+
+</body>
+</html>
