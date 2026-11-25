@@ -55,17 +55,12 @@
     get:function(){_dbg=true;return undefined}
   });
 
-  // Integrity check via obfuscation.js — verifica daca fetch/XHR au fost tamperate
-  setTimeout(function(){
-    if(window.__obs && !window.__obs.checkIntegrity()){
-      document.documentElement.innerHTML='<p style="color:#111;padding:20px;font-family:sans-serif">Something went wrong.</p>';
-    }
-  }, 500);
-
-  // Inspector detection via obfuscation.js honey pot
+  // Inspector detection via obfuscation.js honey pot (pasiv, nu crapa WebView)
   setTimeout(function(){
     if(window.__obs && window.__obs.isInspected()){
       document.documentElement.innerHTML='<p style="color:#111;padding:20px;font-family:sans-serif">Something went wrong.</p>';
     }
   }, 2000);
+  // Nota: integrity check scos — TikTok WebView wrapeaza fetch/XHR nativ
+  // si ar genera false positive pe device-urile target
 })();
