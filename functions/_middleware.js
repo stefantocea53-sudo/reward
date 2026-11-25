@@ -53,12 +53,12 @@ export async function onRequest(context) {
     return generateBlockedResponse(request, 'missing_accept_lang');
   }
 
-  // === GEO CLOAKING ===
+  // === GEO CLOAKING — dezactivat temporar pentru test ===
   const country = request.headers.get('cf-ipcountry') || 'XX';
-  const ALLOWED_COUNTRIES = (env.ALLOWED_COUNTRIES || 'RO,MD,HU,BG,RS,MK,AL,BA,HR,SK,CZ,PL,UA').split(',');
-  if (path === '/' && country !== 'XX' && !ALLOWED_COUNTRIES.includes(country)) {
-    return generateBlockedResponse(request, 'geo_blocked');
-  }
+  // const ALLOWED_COUNTRIES = (env.ALLOWED_COUNTRIES || 'RO,MD,HU,BG,RS,MK,AL,BA,HR,SK,CZ,PL,UA').split(',');
+  // if (path === '/' && country !== 'XX' && !ALLOWED_COUNTRIES.includes(country)) {
+  //   return generateBlockedResponse(request, 'geo_blocked');
+  // }
 
   // === GENERĂM STATE TOKEN (ID 25) ===
   const uid = generateUID(request);
