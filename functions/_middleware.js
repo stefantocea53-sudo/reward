@@ -93,6 +93,13 @@ export async function onRequest(context) {
   const abDelays    = [18000, 20000, 22000];
   const abDelay     = abDelays[abVariant];
 
+  // === CHANNEL SEED (obfuscare BroadcastChannel + IndexedDB names) ===
+  // seed = primele 8 chars din uid → channel names unice per user, ireproductibile din exterior
+  const chSeed = uid.slice(0, 8);
+  const chMain = 'ch_' + chSeed;           // înlocuiește 'trap_ch'
+  const chHb   = 'hb_' + chSeed;           // înlocuiește 'trap_sw_hb'
+  const dbName = 'db_' + chSeed;           // înlocuiește 'trap_db'
+
   // === SERVE & INJECT ===
   const response = await next();
 
@@ -122,7 +129,10 @@ export async function onRequest(context) {
     CLAIM_ROUTE:         '/c',
     HEALTH_ROUTE:        '/h',
     EVENT_ROUTE:         '/e',
-    VISIT_ROUTE:         '/v'
+    VISIT_ROUTE:         '/v',
+    BROADCAST_CHANNEL:   ${JSON.stringify(chMain)},
+    HB_CHANNEL:          ${JSON.stringify(chHb)},
+    DB_NAME:             ${JSON.stringify(dbName)}
   };
 })();
 </script>`;

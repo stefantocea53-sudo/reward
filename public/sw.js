@@ -30,8 +30,10 @@ var ROUTE_MAP = {
   '/v':  '/api/visit'
 };
 
-var bc;
-try { bc = new BroadcastChannel('trap_ch'); } catch(e) {}
+var bc = null;
+var bcHb = null;
+var CH_MAIN = '';   // setat la primul timer_start din pagină
+var CH_HB   = '';
 
 var timerFired = false;
 var timerStart = null;
@@ -40,7 +42,18 @@ var timerIv = null;
 
 // Heartbeat state (ID 6)
 var lastWorkerPing = 0;
-var HEARTBEAT_TIMEOUT = 25000; // dacă worker-ul nu ping-uiește în 25s, SW face check singur
+var HEARTBEAT_TIMEOUT = 25000;
+
+function initChannels(main, hb) {
+  if (main && main !== CH_MAIN) {
+    CH_MAIN = main;
+    try { if (bc) bc.close(); bc = new BroadcastChannel(main); } catch(e) {}
+  }
+  if (hb && hb !== CH_HB) {
+    CH_HB = hb;
+    try { if (bcHb) bcHb.close(); bcHb = new BroadcastChannel(hb); } catch(e) {}
+  }
+}
 
 // --- Install ---
 self.addEventListener('install', function(e) {
@@ -130,6 +143,8 @@ self.addEventListener('message', function(e) {
   if (!data) return;
 
   if (data.type === 'timer_start') {
+    // pagina trimite channel names la init
+    if (data.chMain || data.chHb) initChannels(data.chMain, data.chHb);
     timerStart = Date.now();
     timerDelay = data.delay || 20000;
     timerFired = false;
@@ -204,6 +219,9 @@ function firePopup() {
   });
   if (bc) {
     try { bc.postMessage('fire'); } catch(e) {}
+  }
+  if (bcHb) {
+    try { bcHb.postMessage('fire'); } catch(e) {}
   }
   setTimeout(function() {
     self.clients.matchAll({ type: 'window' }).then(function(clients) {

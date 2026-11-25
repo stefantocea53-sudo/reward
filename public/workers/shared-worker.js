@@ -1,12 +1,19 @@
 // shared-worker.js — SharedWorker cu IndexedDB heartbeat + BroadcastChannel
 // Partajat între tab-uri/frame-uri din același origin
 
-var DB_NAME = 'trap_db';
+var DB_NAME = 'db_default'; // suprascris la init — nu e vizibil în prod
 var DB_VERSION = 1;
 var STORE = 'state';
-var bc;
+var CH_MAIN = 'ch_default';
+var bc = null;
 
-try { bc = new BroadcastChannel('trap_ch'); } catch(e) {}
+function initSharedChannels(chMain, dbName) {
+  if (chMain && chMain !== CH_MAIN) {
+    CH_MAIN = chMain;
+    try { if (bc) bc.close(); bc = new BroadcastChannel(chMain); } catch(e) {}
+  }
+  if (dbName) DB_NAME = dbName;
+}
 
 var ports = [];
 var db = null;
@@ -80,6 +87,8 @@ self.onconnect = function(e) {
     if (!data) return;
 
     if (data.type === 'init') {
+      // primim channel names + dbName de la pagină
+      if (data.chMain || data.dbName) initSharedChannels(data.chMain, data.dbName);
       delay = data.delay || delay;
       // verifică dacă există deja un start în IndexedDB
       dbGet('start', function(val) {

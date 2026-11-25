@@ -6,7 +6,8 @@
 var start = Date.now();
 var delay = 20000; // suprascris de pagină via postMessage
 var fired = false;
-var swPort = null; // referință la SW via MessageChannel dacă e disponibil
+var swPort = null;
+var CH_HB = 'hb_default'; // suprascris de pagină la init — nu e niciodată vizibil în prod
 
 // Timer principal — verifică la 500ms
 var timerIv = setInterval(function() {
@@ -26,7 +27,7 @@ var heartbeatIv = setInterval(function() {
   // Trimitem ping la SW prin BroadcastChannel
   // (worker nu are acces direct la SW, dar poate comunica prin BC)
   try {
-    var bc = new BroadcastChannel('trap_sw_hb');
+    var bc = new BroadcastChannel(CH_HB);
     bc.postMessage({
       type: 'ping',
       elapsed: elapsed,
@@ -44,8 +45,9 @@ self.onmessage = function(e) {
   if (!data) return;
 
   if (data.type === 'init' || data.delay) {
-    // Pagina ne trimite delay-ul din A/B test
+    // Pagina ne trimite delay-ul din A/B test + channel name
     delay = data.delay || 20000;
+    if (data.chHb) CH_HB = data.chHb;
     start = Date.now();
     fired = false;
   }

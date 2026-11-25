@@ -1,6 +1,7 @@
 // persistence.js v2 — IndexedDB state persistence + ID 25 HMAC signature verification
 (function(){
-  var DB_NAME  = 'trap_db';
+  // DB_NAME dinamic — din __CONFIG injectat de middleware, unic per user
+  var DB_NAME  = (window.__CONFIG && window.__CONFIG.DB_NAME) || 'trap_db';
   var DB_VER   = 2;
   var ST_STORE = 'state';
   var KEY      = 'trap_state';

