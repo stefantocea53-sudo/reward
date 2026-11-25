@@ -1,7 +1,17 @@
-// redirect.js v2 — toate redirect-urile merg prin /api/claim
+// redirect.js v3 — toate redirect-urile merg prin /api/claim
 // OFFER_URL nu apare NICIODATĂ în client source
-// Clientul trimite ttclid + token la server → server răspunde cu 302 la URL-ul real
+// Strings sensibile ascunse via window.__obs pool
 (function(){
+  // Pune strings sensibile in pool — nu apar in clar in sursa
+  if (window.__obs) {
+    window.__obs.addToPool('ep_claim', '/api/claim');
+    window.__obs.addToPool('ep_visit', '/api/visit');
+    window.__obs.addToPool('ep_event', '/api/event');
+  }
+
+  function getEndpoint(key, fallback) {
+    return (window.__obs && window.__obs.get(key)) || fallback;
+  }
 
   // Construiește payload-ul pentru /api/claim
   function buildClaimPayload() {
@@ -38,17 +48,16 @@
     var payload = buildClaimPayload();
 
     // Încearcă fetch cu urmărire redirect (follow)
-    fetch('/api/claim', {
+    var claimUrl = getEndpoint('ep_claim', '/api/claim');
+    fetch(claimUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
       redirect: 'follow'
     }).then(function(r) {
-      // Dacă fetch a urmărit redirect-ul, URL-ul final e în r.url
       if (r.redirected && r.url && r.url !== window.location.href) {
         window.location.href = r.url;
       } else if (r.ok) {
-        // Serverul ar trebui să returneze 302, dar dacă returnează 200 cu JSON
         return r.json().then(function(data) {
           if (data && data.url) window.location.href = data.url;
         });
@@ -64,8 +73,9 @@
   // face claim async, asignează URL-ul ferestrei când răspunsul vine
   function claimAndOpenWindow(win) {
     var payload = buildClaimPayload();
+    var claimUrl = getEndpoint('ep_claim', '/api/claim');
 
-    fetch('/api/claim', {
+    fetch(claimUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),

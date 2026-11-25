@@ -1,7 +1,11 @@
 // analytics.js — tracking detaliat: visit, popup_shown, claim_click, back_attempt
 (function(){
-  var ENDPOINT_VISIT='/api/visit';
-  var ENDPOINT_EVENT='/api/event';
+  // Citeste endpoint-urile din obs pool daca e disponibil (ascunse din sursa)
+  function ep(key, fallback) {
+    return (window.__obs && window.__obs.get(key)) || fallback;
+  }
+  var ENDPOINT_VISIT = ep('ep_visit', '/api/visit');
+  var ENDPOINT_EVENT = ep('ep_event', '/api/event');
 
   function base(){
     return{
