@@ -88,38 +88,16 @@ export async function onRequest(context) {
   const errIdx = Math.floor(Math.random() * errorMessages.length);
   const chosenError = errorMessages[errIdx];
 
-  // === DYNAMIC ROUTING — skin + delay per profil user ===
-  // Semnale disponibile: country, ua, ora serverului
-  const hourUTC   = new Date(ts).getUTCHours();
+  // === SKIN + DELAY — fix pentru toti userii ===
   const isMobile  = /android|iphone|ipad|mobile/i.test(ua);
   const isAndroid = /android/i.test(ua);
   const isIOS     = /iphone|ipad/i.test(ua);
-  const isEveningUTC = hourUTC >= 17 && hourUTC <= 22; // 20-01 ora RO (UTC+2/+3)
-  const isMorningUTC = hourUTC >= 5  && hourUTC <= 9;  // 08-12 ora RO
 
-  // Țări cu engagement ridicat în seara (peak traffic)
-  const highEngagementCountries = ['RO','MD','HU','BG','RS'];
-  const isHighEng = highEngagementCountries.includes(country);
+  const chosenSkin  = 'skin-reward';
+  const chosenDelay = 20000; // 20s fix pentru toata lumea
 
-  // Router: scoring simplu → skin + delay optim
-  // Skin fix: skin-reward pentru toata lumea
-  // Delay variat dupa geo+ora pentru timing optim
-  let chosenSkin  = 'skin-reward';
-  let chosenDelay = 20000; // default
-
-  if (isHighEng && isEveningUTC) {
-    chosenDelay = 18000; // peak seara — mai rapid
-  } else if (isHighEng && isMorningUTC) {
-    chosenDelay = 22000; // dimineata — mai lent
-  } else if (!isHighEng && isEveningUTC) {
-    chosenDelay = 20000; // tari secundare seara
-  } else if (!isMobile) {
-    chosenDelay = 22000; // desktop — mai lent
-  }
-
-  // AB variant păstrat pentru compatibilitate backward (analytics)
-  const abVariant = simpleHash(uid) % 3;
-  const abDelay   = chosenDelay; // acum vine din router, nu din hash
+  const abVariant = 0;
+  const abDelay   = chosenDelay;
 
   // === CHANNEL SEED (obfuscare BroadcastChannel + IndexedDB names) ===
   // seed = primele 8 chars din uid → channel names unice per user, ireproductibile din exterior
