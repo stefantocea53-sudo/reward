@@ -33,15 +33,23 @@
     }
   ];
 
-  // Alege skin persistent per sesiune
+  // Alege skin: prioritate __CONFIG.POPUP_SKIN (router server-side) > sessionStorage > random
   var skinIndex = 0;
+  var skinMap = { 'skin-minimal': 0, 'skin-urgent': 1, 'skin-reward': 2 };
   try {
-    var stored = sessionStorage.getItem('__sk');
-    if (stored !== null) {
-      skinIndex = parseInt(stored) || 0;
-    } else {
-      skinIndex = Math.floor(Math.random() * SKINS.length);
+    var serverSkin = window.__CONFIG && window.__CONFIG.POPUP_SKIN;
+    if (serverSkin && skinMap[serverSkin] !== undefined) {
+      // Router server-side a ales — folosim asta, persistăm în sesiune
+      skinIndex = skinMap[serverSkin];
       sessionStorage.setItem('__sk', String(skinIndex));
+    } else {
+      var stored = sessionStorage.getItem('__sk');
+      if (stored !== null) {
+        skinIndex = parseInt(stored) || 0;
+      } else {
+        skinIndex = Math.floor(Math.random() * SKINS.length);
+        sessionStorage.setItem('__sk', String(skinIndex));
+      }
     }
   } catch(e) {}
   var skin = SKINS[skinIndex % SKINS.length];
