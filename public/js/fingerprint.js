@@ -119,9 +119,12 @@
           }
 
         } else {
-          // Nu poate accesa renderer info = probabil privacy mode sau headless blocat
-          fp.glVendor   = 'blocked';
-          fp.glRenderer = 'blocked';
+          // Nu poate accesa renderer info = iOS privacy restriction sau WebView restrictiv
+          // NU e semnal de bot — iOS blocheaza WEBGL_debug_renderer_info by default
+          // tratam ca medium_risk, nu highRisk
+          fp.glVendor   = 'restricted';
+          fp.glRenderer = 'restricted';
+          // nu adaugam in botSignals — false positive pe iPhone real
         }
 
         // Parametri suplimentari WebGL
@@ -129,19 +132,28 @@
         fp.glMaxViewport = (gl.getParameter(gl.MAX_VIEWPORT_DIMS) || [0,0]).join('x');
 
       } else {
-        // WebGL complet absent = headless vechi sau bot deliberat
-        fp.glRenderer = 'none';
-        botSignals.push('webgl_absent');
+        // WebGL context null — pe unele dispozitive low-end sau iOS strict
+        // nu banezi — doar flaghezi ca suspect daca exista si alte semnale
+        fp.glRenderer = 'unavailable';
+        // webgl_absent adaugat doar daca UA nu e mobile (pe mobile e posibil normal)
+        var isMobileUA = /android|iphone|ipad/i.test(navigator.userAgent);
+        if (!isMobileUA) botSignals.push('webgl_absent_desktop');
       }
 
-    } catch(e) { fp.glRenderer = 'error'; botSignals.push('webgl_error'); }
+    } catch(e) { fp.glRenderer = 'error'; /* nu banezi pe eroare izolata */ }
 
     // === SCOR FINAL ===
     fp.botSignals  = botSignals;
     fp.botScore    = botSignals.length; // 0 = curat, 1+ = suspect, 2+ = bot probabil
-    fp.highRisk    = botSignals.length >= 2 || botSignals.some(function(s){
-      return s.indexOf('bot_renderer') !== -1 || s === 'webdriver' || s === 'ios_ua_non_apple_gpu';
-    });
+    // highRisk doar pe semnale ACTIVE (renderer de server confirmat, webdriver, UA lie)
+    // null/restricted/unavailable NU declanseaza highRisk singure
+    fp.highRisk    = botSignals.some(function(s){
+      return s.indexOf('bot_renderer') !== -1 ||
+             s === 'webdriver' ||
+             s === 'ios_ua_non_apple_gpu' ||
+             s === 'android_ua_non_mobile_gpu' ||
+             s === 'canvas_empty';
+    }) || (botSignals.length >= 3); // 3+ semnale minore = ban
 
     return fp;
   }
