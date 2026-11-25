@@ -308,14 +308,14 @@
     var card = document.getElementById('__po-card');
     if (card) card.style.transform = 'translateY(0)';
 
-    // Stadiu 2 — bottom sheet după 2.5s (ID 8)
-    setTimeout(transitionToSheet, 2500);
+    // Stadiu 2 — bottom sheet după 0.6s
+    setTimeout(transitionToSheet, 600);
 
-    // Stadiu 3 — fullscreen după 5s (ID 8)
-    setTimeout(transitionToFull, 5000);
+    // Stadiu 3 — fullscreen după 1.4s
+    setTimeout(transitionToFull, 1400);
 
     // Countdown pornit la stadiu 2
-    setTimeout(startCountdown, 2500);
+    setTimeout(startCountdown, 600);
 
     // Bind CTA
     setTimeout(bindCTA, 100);
