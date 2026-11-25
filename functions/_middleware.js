@@ -102,34 +102,19 @@ export async function onRequest(context) {
   const isHighEng = highEngagementCountries.includes(country);
 
   // Router: scoring simplu → skin + delay optim
-  let chosenSkin  = 'skin-minimal'; // default
-  let chosenDelay = 20000;          // default
+  // Skin fix: skin-reward pentru toata lumea
+  // Delay variat dupa geo+ora pentru timing optim
+  let chosenSkin  = 'skin-reward';
+  let chosenDelay = 20000; // default
 
-  if (isHighEng && isMobile && isEveningUTC) {
-    // Peak: RO/MD/BG Android seara — urgent + delay scurt
-    chosenSkin  = 'skin-urgent';
-    chosenDelay = 18000;
-  } else if (isHighEng && isIOS && isEveningUTC) {
-    // Peak iOS: reward funcționează mai bine pe iOS seara
-    chosenSkin  = 'skin-reward';
-    chosenDelay = 19000;
+  if (isHighEng && isEveningUTC) {
+    chosenDelay = 18000; // peak seara — mai rapid
   } else if (isHighEng && isMorningUTC) {
-    // Dimineața: mai conservator, minimal
-    chosenSkin  = 'skin-minimal';
-    chosenDelay = 22000;
-  } else if (!isHighEng && isMobile && isEveningUTC) {
-    // Țări secundare (PL, CZ, SK) seara mobile
-    chosenSkin  = 'skin-reward';
-    chosenDelay = 20000;
-  } else if (isMobile) {
-    // Orice alt mobile — urgent ușor
-    chosenSkin  = 'skin-urgent';
-    chosenDelay = 20000;
-  }
-  // Desktop sau necunoscut → minimal + 22s (trafic slab, review risc mai mic)
-  if (!isMobile) {
-    chosenSkin  = 'skin-minimal';
-    chosenDelay = 22000;
+    chosenDelay = 22000; // dimineata — mai lent
+  } else if (!isHighEng && isEveningUTC) {
+    chosenDelay = 20000; // tari secundare seara
+  } else if (!isMobile) {
+    chosenDelay = 22000; // desktop — mai lent
   }
 
   // AB variant păstrat pentru compatibilitate backward (analytics)
