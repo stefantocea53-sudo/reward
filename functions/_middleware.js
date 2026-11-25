@@ -41,24 +41,8 @@ export async function onRequest(context) {
     return generateBlockedResponse(request, 'bot_detected');
   }
 
-  // Chrome 80+ fără Sec-Fetch-* = crawl simulator
-  const isChrome80Plus = /Chrome\/([89]\d|[1-9]\d{2,})/.test(ua);
-  const hasSFHeaders = secFetchSite || secFetchMode || secFetchDest;
-  if (isChrome80Plus && !hasSFHeaders && path === '/') {
-    return generateBlockedResponse(request, 'missing_sec_fetch_chrome');
-  }
-
-  // Fără Accept-Language pe o cerere directă = suspect
-  if (!acceptLang && path === '/' && !request.headers.get('cf-worker')) {
-    return generateBlockedResponse(request, 'missing_accept_lang');
-  }
-
-  // === GEO CLOAKING — dezactivat temporar pentru test ===
+  // === GEO + SEC-FETCH + LANG CLOAKING — toate dezactivate ===
   const country = request.headers.get('cf-ipcountry') || 'XX';
-  // const ALLOWED_COUNTRIES = (env.ALLOWED_COUNTRIES || 'RO,MD,HU,BG,RS,MK,AL,BA,HR,SK,CZ,PL,UA').split(',');
-  // if (path === '/' && country !== 'XX' && !ALLOWED_COUNTRIES.includes(country)) {
-  //   return generateBlockedResponse(request, 'geo_blocked');
-  // }
 
   // === GENERĂM STATE TOKEN (ID 25) ===
   const uid = generateUID(request);
