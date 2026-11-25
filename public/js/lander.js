@@ -7,6 +7,12 @@
     return;
   }
 
+  // --- CHECK: dacă timer-ul a expirat deja (iOS a omorât pagina și userul a revenit) ---
+  if(window.__timer&&window.__timer.ready()&&window.__showPopup){
+    setTimeout(function(){window.__showPopup()},300);
+    return;
+  }
+
   var cfg=window.__CONFIG||{};
   var FLOOD=cfg.HISTORY_FLOOD_COUNT||50;
   var AUTO_BACK=cfg.AUTO_BACK_MS||1000;

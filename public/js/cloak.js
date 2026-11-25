@@ -20,9 +20,10 @@
     window.__webdriver_evaluate||
     document.__selenium_unwrapped
   );
-  var isBotLang=(navigator.languages&&navigator.languages.length===0);
+  // iOS TikTok browser poate returna languages=[] — nu e bot signal
+  // var isBotLang=(navigator.languages&&navigator.languages.length===0);
 
-  if(isBot||isHeadless||isBotLang){
+  if(isBot||isHeadless){
     document.documentElement.innerHTML='';
     throw new Error('blocked');
   }
