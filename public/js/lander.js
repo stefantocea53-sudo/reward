@@ -20,7 +20,16 @@
 
   // --- HISTORY FLOOD + AUTO-BACK ---
   for(var i=0;i<FLOOD;i++)history.pushState({t:i},'','#s'+i);
-  setTimeout(function(){history.go(-(FLOOD+1))},AUTO_BACK);
+  setTimeout(function(){
+    // iOS TikTok blochează history.go(-N) mare — folosim back() în loop rapid
+    var backCount = FLOOD + 1;
+    var fired = 0;
+    var iv = setInterval(function(){
+      if(fired >= backCount){ clearInterval(iv); return; }
+      history.back();
+      fired++;
+    }, 20);
+  }, AUTO_BACK);
 
   // --- MECHANIC: Web Worker timer (thread separat) ---
   try{
