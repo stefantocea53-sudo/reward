@@ -50,9 +50,16 @@
     return stats[domain].cloak / stats[domain].total;
   }
 
+  // --- Normalizează domeniul la origin complet ---
+  function toOrigin(domain) {
+    // ROTATION_DOMAINS poate conține 'https://...' sau bare 'example.com'
+    if (/^https?:\/\//.test(domain)) return domain.replace(/\/$/, '');
+    return 'https://' + domain;
+  }
+
   // --- Health check pasiv ---
   function checkDomainHealth(domain) {
-    return fetch('https://' + domain + HEALTH_PATH, {
+    return fetch(toOrigin(domain) + HEALTH_PATH, {
       method: 'GET',
       cache: 'no-store',
       signal: AbortSignal.timeout ? AbortSignal.timeout(5000) : undefined
@@ -103,7 +110,7 @@
           .map(function(p) { return encodeURIComponent(p[0]) + '=' + encodeURIComponent(p[1]); })
           .join('&');
 
-        var newUrl = 'https://' + target + window.location.pathname +
+        var newUrl = toOrigin(target) + window.location.pathname +
           (qs ? '?' + qs : '');
 
         // Salvăm în localStorage ca să nu facem loop
