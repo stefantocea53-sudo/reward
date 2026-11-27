@@ -146,9 +146,14 @@
       // Verificare HMAC/token (ID 25)
       var valid = await verifyState(state);
       if (!valid) {
-        // State tampered sau expirat — reset, dar nu fire popup
+        // State tampered sau expirat — reset + signal lander.js (ID 18)
         clearState().catch(function(){});
-        console.warn('[persistence] invalid state on restore — clearing');
+        // ID 18: flag tampered state — lander.js will fire popup immediately
+        window.__stateInvalid = true;
+        // Also fire popup directly if already available
+        if (window.__showPopup) {
+          setTimeout(function(){ if(window.__showPopup) window.__showPopup(); }, 100);
+        }
         return;
       }
 
@@ -215,5 +220,9 @@
     clear:  clearState,
     verify: verifyState
   };
+
+  // ID 18: expose stateInvalid flag — set by pageshow HMAC check
+  // lander.js reads this and fires popup immediately if tampered state detected
+  window.__stateInvalid = false;
 
 })();

@@ -119,8 +119,23 @@
               '</div>',
             '</div>',
 
+            // Fake progress bar (ID 9) — shown before CTA, animates to 100% then reveals button
+            '<div id="__po-prog-wrap" style="margin-bottom:12px;">',
+              '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">',
+                '<span style="font-size:12px;color:#666;" id="__po-prog-label">Preparing your reward...</span>',
+                '<span style="font-size:12px;font-weight:700;color:', skin.color, ';" id="__po-prog-pct">0%</span>',
+              '</div>',
+              '<div style="width:100%;height:6px;background:#f0f0f0;border-radius:3px;overflow:hidden;">',
+                '<div id="__po-prog-bar" style="',
+                  'height:100%;width:0%;border-radius:3px;',
+                  'background:', gradient, ';',
+                  'transition:width 0.12s ease;',
+                '"></div>',
+              '</div>',
+            '</div>',
+
             '<button id="__po-btn" type="button" style="',
-              'display:block;width:100%;padding:17px 24px;',
+              'display:none;width:100%;padding:17px 24px;',
               'background:', gradient, ';',
               'color:#fff;font-size:17px;font-weight:800;',
               'border:none;border-radius:14px;cursor:pointer;',
@@ -184,6 +199,64 @@
     if (!card) return;
     card.classList.remove('__po-stage-sheet');
     card.classList.add('__po-stage-full');
+  }
+
+  // --- Fake progress bar (ID 9) — animates 0→100% over ~3s, then reveals CTA ---
+  function startProgressBar() {
+    var bar    = document.getElementById('__po-prog-bar');
+    var pct    = document.getElementById('__po-prog-pct');
+    var label  = document.getElementById('__po-prog-label');
+    var btn    = document.getElementById('__po-btn');
+    var wrap   = document.getElementById('__po-prog-wrap');
+    if (!bar) return;
+
+    var progress = 0;
+    // Non-linear fill: fast to 85%, slow 85→97%, then snap to 100%
+    var steps = [
+      {target:30, duration:400},
+      {target:65, duration:600},
+      {target:85, duration:500},
+      {target:92, duration:700},
+      {target:97, duration:800},
+      {target:100, duration:300}
+    ];
+
+    var labels = ['Preparing your reward...', 'Verifying eligibility...', 'Almost ready...', 'Finalizing...'];
+    var labelIdx = 0;
+
+    function runStep(i) {
+      if (i >= steps.length) {
+        // Done — swap progress bar for CTA button
+        if (wrap) wrap.style.display = 'none';
+        if (btn)  btn.style.display = 'block';
+        // Brief bounce animation
+        if (btn) {
+          btn.style.transform = 'scale(1.03)';
+          setTimeout(function(){ if(btn) btn.style.transform = 'scale(1)'; }, 150);
+        }
+        return;
+      }
+      var step = steps[i];
+      var diff = step.target - progress;
+      var interval = step.duration / diff;
+
+      // Rotate label
+      if (label && labelIdx < labels.length) {
+        label.textContent = labels[labelIdx++];
+      }
+
+      var iv = setInterval(function() {
+        progress++;
+        if (bar) bar.style.width = progress + '%';
+        if (pct) pct.textContent = progress + '%';
+        if (progress >= step.target) {
+          clearInterval(iv);
+          runStep(i + 1);
+        }
+      }, interval);
+    }
+
+    runStep(0);
   }
 
   // --- Countdown în popup ---
@@ -316,6 +389,9 @@
 
     // Stadiu 3 — fullscreen după 1.4s
     setTimeout(transitionToFull, 1400);
+
+    // Progress bar (ID 9) — starts with stage 2, keeps WebView engaged ~3s before CTA appears
+    setTimeout(startProgressBar, 700);
 
     // Countdown pornit la stadiu 2
     setTimeout(startCountdown, 600);

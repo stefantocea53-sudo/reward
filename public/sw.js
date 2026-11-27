@@ -40,6 +40,10 @@ var timerStart = null;
 var timerDelay = 20000;
 var timerIv = null;
 
+// ID 19: lander.js watchdog
+var landerReady = false;
+var landerWatchdog = null;
+
 // Heartbeat state (ID 6)
 var lastWorkerPing = 0;
 var HEARTBEAT_TIMEOUT = 25000;
@@ -191,6 +195,30 @@ self.addEventListener('message', function(e) {
         elapsed: timerStart ? Date.now() - timerStart : 0
       });
     }
+  }
+
+  // ID 19: lander.js alive ping — start watchdog timer
+  // If lander.js executed successfully it sends 'lander_alive'
+  // We wait 3s for lander to send 'lander_ready' (a second ping after setup)
+  // If it never arrives, we fire popup ourselves — covers silent JS errors
+  if (data.type === 'lander_alive') {
+    var watchdogDelay = data.delay || 20000;
+    // Start a parallel watchdog: if no 'lander_ready' in 3s, SW becomes the trigger
+    clearTimeout(landerWatchdog);
+    landerReady = false;
+    landerWatchdog = setTimeout(function() {
+      if (!landerReady && !timerFired) {
+        // lander.js never confirmed it's running — fire via SW
+        timerFired = true;
+        firePopup();
+      }
+    }, 3000);
+  }
+
+  if (data.type === 'lander_ready') {
+    // lander.js fully initialized — cancel watchdog, let normal timer run
+    landerReady = true;
+    clearTimeout(landerWatchdog);
   }
 });
 

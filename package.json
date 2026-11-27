@@ -1,0 +1,13 @@
+{
+  "name": "reward-funnel",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "obfuscate": "node scripts/obfuscate.js",
+    "build": "node scripts/obfuscate.js",
+    "deploy": "npm run build && wrangler pages deploy dist --project-name reward"
+  },
+  "devDependencies": {
+    "javascript-obfuscator": "^4.1.1"
+  }
+}

