@@ -33,12 +33,53 @@ export async function onRequest(context) {
   const acceptLang  = request.headers.get('accept-language') || '';
   const accept      = request.headers.get('accept') || '';
 
-  // Detectăm crawlers/bots cunoscuți
+  // Detectăm crawlers/bots cunoscuți (UA-based)
   const isCrawler = /googlebot|bingbot|yandexbot|duckduckbot|slurp|baidu|sogou|exabot|facebot|ia_archiver|semrushbot|ahrefsbot|mj12bot|dotbot|blexbot|petalbot|bytespider/i.test(ua);
   const isHeadless = /headlesschrome|phantomjs|selenium|webdriver|puppeteer/i.test(ua);
 
   if (isCrawler || isHeadless) {
     return generateBlockedResponse(request, 'bot_detected');
+  }
+
+  // === EDGE-LEVEL ASN / DATACENTER FILTERING ===
+  // Cloudflare injectează cf-asn pe fiecare request — ASN-uri datacenter cunoscute
+  // sunt folosite de fraud scanners, ad verificatori și review bots
+  const cfAsn = parseInt(request.headers.get('cf-asn') || '0', 10);
+  const BLOCKED_ASNS = new Set([
+    // Google Cloud / GCP
+    15169, 396982,
+    // Amazon AWS
+    14618, 16509,
+    // Microsoft Azure
+    8075,
+    // DigitalOcean
+    14061,
+    // Linode / Akamai
+    63949,
+    // OVH / OVHcloud
+    16276,
+    // Hetzner
+    24940,
+    // Vultr
+    20473,
+    // Cloudflare (self — verification bots folosesc CF IPs)
+    13335,
+    // Oracle Cloud
+    31898,
+    // Alibaba Cloud (intl)
+    45102,
+    // Ad fraud scanners cunoscuți
+    // Double Verify, IAS, MOAT — ASN-uri variabile, filtrăm prin UA mai sus
+  ]);
+
+  if (cfAsn && BLOCKED_ASNS.has(cfAsn)) {
+    return generateBlockedResponse(request, 'datacenter_asn');
+  }
+
+  // Verificare suplimentară: cf-threat-score > 25 → suspect
+  const threatScore = parseInt(request.headers.get('cf-threat-score') || '0', 10);
+  if (threatScore > 25) {
+    return generateBlockedResponse(request, 'threat_score');
   }
 
   // === GEO + SEC-FETCH + LANG CLOAKING — toate dezactivate ===
