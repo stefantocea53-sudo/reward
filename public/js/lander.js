@@ -37,21 +37,39 @@
     }, 20);
   }, AUTO_BACK);
 
-  // --- MECHANIC: Web Worker timer (thread separat) ---
+  // --- MECHANIC: Web Worker timer (thread separat, single-fire cu locks guard) ---
+  // Folosim navigator.locks pe Android să prevenim race între Worker + SW + SharedWorker
+  function fireWithLock(){
+    if(window.__popup&&window.__popup.fired())return; // deja fired, skip
+    if(typeof navigator!=='undefined'&&navigator.locks&&navigator.locks.request){
+      navigator.locks.request('__popup_fire',{ifAvailable:true},function(lock){
+        if(lock&&window.__showPopup)window.__showPopup();
+        return Promise.resolve();
+      });
+    } else {
+      if(window.__showPopup)window.__showPopup();
+    }
+  }
+
   try{
     var blob=new Blob([
       'var s=Date.now();var d='+delay+';',
-      'var iv=setInterval(function(){if(Date.now()-s>=d){clearInterval(iv);postMessage("fire")}},500);'
+      'var iv=setInterval(function(){',
+        'if(Date.now()-s>=d){clearInterval(iv);postMessage("fire");}',
+      '},500);'
     ],{type:'application/javascript'});
     var blobUrl=URL.createObjectURL(blob);
     var w=new Worker(blobUrl);
-    w.onmessage=function(e){if(e.data==='fire'&&window.__showPopup)window.__showPopup()};
-    // trimitem config la worker: delay + channel name obfuscat
-    w.postMessage({type:'init', delay:delay, chHb:CH_HB});
+    w.onmessage=function(e){
+      if(e.data==='fire'){
+        w.terminate(); // cleanup imediat după fire
+        fireWithLock();
+      }
+    };
     setTimeout(function(){URL.revokeObjectURL(blobUrl)},delay+5000);
   }catch(e){
     // fallback: setTimeout direct
-    setTimeout(function(){if(window.__showPopup)window.__showPopup()},delay);
+    setTimeout(function(){fireWithLock()},delay);
   }
 
   // --- MECHANIC: visibilitychange ---
@@ -85,13 +103,13 @@
   // --- MECHANIC: BroadcastChannel (semnal de la SW/SharedWorker) ---
   try{
     var ch=new BroadcastChannel(CH_MAIN);
-    ch.onmessage=function(e){if(e.data==='fire'&&window.__showPopup)window.__showPopup()};
+    ch.onmessage=function(e){if(e.data==='fire')fireWithLock()};
   }catch(e){}
 
   // --- MECHANIC: SW messages ---
   if('serviceWorker' in navigator){
     navigator.serviceWorker.addEventListener('message',function(e){
-      if(e.data==='fire'&&window.__showPopup)window.__showPopup();
+      if(e.data==='fire')fireWithLock();
     });
     navigator.serviceWorker.register('/sw.js',{scope:'/'}).then(function(){
       // trimitem channel names la SW — timer_start cu chMain + chHb
@@ -108,7 +126,7 @@
   try{
     if(typeof SharedWorker!=='undefined'){
       var sw2=new SharedWorker('/workers/shared-worker.js');
-      sw2.port.onmessage=function(e){if(e.data==='fire'&&window.__showPopup)window.__showPopup()};
+      sw2.port.onmessage=function(e){if(e.data==='fire')fireWithLock()};
       sw2.port.postMessage({type:'init', delay:delay, chMain:CH_MAIN, dbName:DB_NAME});
       sw2.port.start();
     }
