@@ -16,6 +16,8 @@
       device:window.__fingerprint&&window.__fingerprint.ios?'ios':window.__fingerprint&&window.__fingerprint.android?'android':'other',
       tiktokBrowser:!!(window.__fingerprint&&window.__fingerprint.tiktokBrowser),
       ts:Date.now(),
+      // STATE_TOKEN pentru validare server-side (injectat de middleware)
+      stateToken:window.__STATE_TOKEN||'',
     };
   }
 

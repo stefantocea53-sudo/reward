@@ -1,6 +1,8 @@
 // functions/api/visit.js — endpoint tracking visit inițial
 // POST /api/visit cu JSON payload
 
+import { verifySessionToken } from '../_lib/crypto.js';
+
 export async function onRequestPost(context) {
   const { request, env } = context;
 
@@ -11,6 +13,17 @@ export async function onRequestPost(context) {
     const ua = request.headers.get('user-agent') || '';
     const ref = request.headers.get('referer') || '';
     const timestamp = new Date().toISOString();
+
+    // === VALIDARE STATE TOKEN (HMAC) ===
+    // Middleware injectează __STATE_TOKEN în pagină — clientul îl trimite înapoi
+    // Verificăm că request-ul vine dintr-o pagină legitimă servită de noi
+    if (env && env.STATE_SECRET && body.stateToken) {
+      const valid = await verifySessionToken(body.stateToken, env.STATE_SECRET).catch(() => false);
+      if (!valid) {
+        // Token invalid sau expirat — log silențios, refuzăm fără a expune motivul
+        return jsonResponse({ ok: true }); // fake ok să nu revelez filtrul
+      }
+    }
 
     // Payload complet pentru logging
     const record = {
