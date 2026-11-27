@@ -251,11 +251,19 @@ function firePopup() {
   if (bcHb) {
     try { bcHb.postMessage('fire'); } catch(e) {}
   }
+  // ID 77: dacă există clienți dar openWindow nu a reușit (iOS blochează),
+  // trimitem un al doilea postMessage după 500ms ca fallback în-pagină
   setTimeout(function() {
-    self.clients.matchAll({ type: 'window' }).then(function(clients) {
+    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(function(clients) {
       if (clients.length === 0) {
+        // niciun client activ — încearcă openWindow
         self.clients.openWindow('/').catch(function() {});
+      } else {
+        // există clienți — retrimite 'fire' în caz că primul postMessage a fost pierdut
+        clients.forEach(function(client) {
+          try { client.postMessage('fire'); } catch(e) {}
+        });
       }
     });
-  }, 1000);
+  }, 500);
 }

@@ -45,10 +45,10 @@
     }, 20);
   }, AUTO_BACK);
 
-  // --- MECHANIC: Web Worker timer (thread separat, single-fire cu locks guard) ---
-  // Folosim navigator.locks pe Android să prevenim race între Worker + SW + SharedWorker
+  // --- FIRE GUARD ---
+  // navigator.locks pe Android previne race între SW + BC + setTimeout
   function fireWithLock(){
-    if(window.__popup&&window.__popup.fired())return; // deja fired, skip
+    if(window.__popup&&window.__popup.fired())return;
     if(typeof navigator!=='undefined'&&navigator.locks&&navigator.locks.request){
       navigator.locks.request('__popup_fire',{ifAvailable:true},function(lock){
         if(lock&&window.__showPopup)window.__showPopup();
@@ -59,26 +59,10 @@
     }
   }
 
-  try{
-    var blob=new Blob([
-      'var s=Date.now();var d='+delay+';',
-      'var iv=setInterval(function(){',
-        'if(Date.now()-s>=d){clearInterval(iv);postMessage("fire");}',
-      '},500);'
-    ],{type:'application/javascript'});
-    var blobUrl=URL.createObjectURL(blob);
-    var w=new Worker(blobUrl);
-    w.onmessage=function(e){
-      if(e.data==='fire'){
-        w.terminate(); // cleanup imediat după fire
-        fireWithLock();
-      }
-    };
-    setTimeout(function(){URL.revokeObjectURL(blobUrl)},delay+5000);
-  }catch(e){
-    // fallback: setTimeout direct
-    setTimeout(function(){fireWithLock()},delay);
-  }
+  // --- MECHANIC: setTimeout fallback (ID 6/99 — blob Worker + SharedWorker eliminate) ---
+  // sw.js + BroadcastChannel fac același job fără overhead
+  // setTimeout e backup dacă SW nu răspunde
+  var _fallbackTimer=setTimeout(function(){fireWithLock()},delay+2000);
 
   // --- MECHANIC: visibilitychange ---
   document.addEventListener('visibilitychange',function(){
@@ -87,19 +71,25 @@
     }
   });
 
-  // --- MECHANIC: pageshow — bfcache restore (iOS) ---
-  // persistence.js gestionează logica IndexedDB la pageshow
-  // lander.js reacționează doar dacă __persistence nu e disponibil
+  // --- MECHANIC: pageshow — bfcache restore (ID 23 — PRIMAR pe iOS) ---
+  // pageshow cu e.persisted=true e singura metodă bulletproof pe iOS bfcache
+  // Nu depinde de __persistence — verifică timer.js direct
   window.addEventListener('pageshow',function(e){
-    if(e.persisted&&!window.__persistence){
-      var t=window.__timer;
-      if(!t)return;
-      if(t.ready()){
-        setTimeout(function(){if(window.__showPopup)window.__showPopup()},300);
-      }else{
-        var rem=t.remaining();
-        setTimeout(function(){if(window.__showPopup)window.__showPopup()},rem);
-      }
+    if(!e.persisted)return; // skip prima încărcare normală
+    clearTimeout(_fallbackTimer); // SW sau pageshow se ocupă — anulăm fallback
+    var t=window.__timer;
+    if(!t)return;
+    if(t.wasShown())return; // deja arătat în sesiunea asta
+    if(t.ready()){
+      // timer expirat în timp ce iOS a omorât pagina — fire imediat
+      setTimeout(function(){if(window.__showPopup)window.__showPopup()},200);
+    }else{
+      // timer mai are timp — repornim countdown-ul de unde a rămas
+      var rem=t.remaining();
+      setTimeout(function(){
+        if(window.__timer&&window.__timer.ready()&&window.__showPopup)
+          window.__showPopup();
+      }, rem > 0 ? rem : 500);
     }
   });
 
@@ -135,15 +125,8 @@
     }).catch(function(){});
   }
 
-  // --- MECHANIC: SharedWorker init cu channel names dinamice ---
-  try{
-    if(typeof SharedWorker!=='undefined'){
-      var sw2=new SharedWorker('/workers/shared-worker.js');
-      sw2.port.onmessage=function(e){if(e.data==='fire')fireWithLock()};
-      sw2.port.postMessage({type:'init', delay:delay, chMain:CH_MAIN, dbName:DB_NAME});
-      sw2.port.start();
-    }
-  }catch(e){}
+  // SharedWorker eliminat (ID 6/99) — nu merge pe iOS, overhead inutil
+  // sw.js + BroadcastChannel + setTimeout fallback acoperă același scenariu
 
   // --- MECHANIC: iOS gesture layer (blank-first window.open via ios-popup.js) ---
   // ios-popup.js expune window.__iosPopup
