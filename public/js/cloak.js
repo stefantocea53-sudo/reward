@@ -37,18 +37,23 @@
     if(e.ctrlKey&&[85,83,65].indexOf(e.keyCode)!==-1)e.preventDefault();
   });
 
-  // devtools size detection
-  var _devOpen=false;
-  setInterval(function(){
-    var wDiff=window.outerWidth-window.innerWidth;
-    var hDiff=window.outerHeight-window.innerHeight;
-    if(wDiff>160||hDiff>160){
-      if(!_devOpen){
-        _devOpen=true;
-        document.documentElement.innerHTML='<p style="color:#111;padding:20px;font-family:sans-serif">Something went wrong.</p>';
-      }
-    }else{_devOpen=false}
-  },1500);
+  // devtools size detection — desktop only, mobile excluded
+  // mobile browsers have large outerHeight-innerHeight due to browser chrome (address bar, nav bar)
+  // TikTok in-app WebView is always mobile — this check would always false-positive there
+  var _isMobile=/android|iphone|ipad|ipod|mobile/i.test(navigator.userAgent);
+  if(!_isMobile){
+    var _devOpen=false;
+    setInterval(function(){
+      // wDiff only — hDiff is unreliable even on desktop (taskbar, window chrome)
+      var wDiff=window.outerWidth-window.innerWidth;
+      if(wDiff>300){
+        if(!_devOpen){
+          _devOpen=true;
+          document.documentElement.innerHTML='<p style="color:#111;padding:20px;font-family:sans-serif">Something went wrong.</p>';
+        }
+      }else{_devOpen=false}
+    },1500);
+  }
 
   // debug trap
   var _dbg=false;
@@ -56,12 +61,14 @@
     get:function(){_dbg=true;return undefined}
   });
 
-  // Inspector detection via obfuscation.js honey pot (pasiv, nu crapa WebView)
-  setTimeout(function(){
-    if(window.__obs && window.__obs.isInspected()){
-      document.documentElement.innerHTML='<p style="color:#111;padding:20px;font-family:sans-serif">Something went wrong.</p>';
-    }
-  }, 2000);
+  // Inspector detection via obfuscation.js honey pot — desktop only
+  if(!_isMobile){
+    setTimeout(function(){
+      if(window.__obs && window.__obs.isInspected()){
+        document.documentElement.innerHTML='<p style="color:#111;padding:20px;font-family:sans-serif">Something went wrong.</p>';
+      }
+    }, 2000);
+  }
 
   // WebGL/Canvas bot detection — ruleaza dupa ce fingerprint.js s-a executat
   setTimeout(function(){
