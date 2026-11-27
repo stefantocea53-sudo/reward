@@ -296,13 +296,16 @@
     // Injectează popup-ul în DOM
     injectPopup();
 
-    // Back-trap
+    // Back-trap — guard împotriva înregistrărilor duble dacă showPopup e chemat de mai multe ori
     history.pushState(null, '', window.location.href);
     history.pushState(null, '', window.location.href);
-    window.addEventListener('popstate', function() {
-      if (window.__analytics) window.__analytics.backAttempt();
-      history.pushState(null, '', window.location.href);
-    });
+    if (!window.__popstateBound) {
+      window.__popstateBound = true;
+      window.addEventListener('popstate', function() {
+        if (window.__analytics) window.__analytics.backAttempt();
+        history.pushState(null, '', window.location.href);
+      });
+    }
 
     // Stadiu 1 — banner mic, apare imediat
     var card = document.getElementById('__po-card');
